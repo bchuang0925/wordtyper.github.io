@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 600px;
+        }
+
+        #text-to-type {
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        #input-field {
+            width: 100%;
+            height: 100px;
+            font-size: 16px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .highlight {
+            color: red;
+        }
+
+        .stats {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+        .stats p {
+            margin: 5px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin-top: 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Typing Test</h1>
+        <div id="text-to-type"></div>
+        <textarea id="input-field" placeholder="Start typing here..."></textarea>
+        <div class="stats">
+            <p>WPM: <span id="wpm">0</span></p>
+            <p>Accuracy: <span id="accuracy">100%</span></p>
+            <p>Time Left: <span id="timer">15s</span></p>
+        </div>
+        <button id="restart-button" style="display:none;">Restart</button>
+    </div>
+
+    <script>
+        const sampleWords = [
+		"before", "along", "table", "ready", "green", "shirt", "grasp", "woman", "model", "light", 
+		"other", "drive", "music", "coffee", "river", "chair", "earth", "blank", "major", "smooth", 
+		"angel", "crowd", "cross", "house", "wordy", "place", "swing", "summer", "truck", "laugh", 
+		"apple", "dance", "break", "block", "money", "pizza", "stone", "water", "cloud", "fruit", 
+		"search", "party", "sharp", "sharp", "woman", "friend", "tiger", "sport", "prove", "short", 
+		"stone", "chair", "beach", "jumpy", "reach", "worky", "drunk", "error", "print", "trust", 
+		"robot", "chance", "money", "blade", "group", "boxy", "final", "quick", "stand", "stamp", 
+		"yellow", "brand", "greet", "raise", "bring", "point", "block", "world", "smart", "photo", 
+		"knife", "ready", "light", "dream", "proof", "horse", "fresh", "space", "climb", "stack", 
+		"peace", "pulse", "tune", "reach", "laugh", "chase", "true", "drum", "layer", "sugar"
+        ];
+        let textToType = "";
+        let timeLimit = 15;
+        let timer;
+        let typedText = "";
+        let correctChars = 0;
+        let totalChars = 0;
+        let timerStarted = false; // Track if the timer has started
+
+        const textDisplay = document.getElementById("text-to-type");
+        const inputField = document.getElementById("input-field");
+        const wpmDisplay = document.getElementById("wpm");
+        const accuracyDisplay = document.getElementById("accuracy");
+        const timerDisplay = document.getElementById("timer");
+        const restartButton = document.getElementById("restart-button");
+
+        function generateText() {
+            textToType = Array.from({ length: 50 }, () => sampleWords[Math.floor(Math.random() * sampleWords.length)]).join(" ");
+            textDisplay.innerText = textToType;
+            totalChars = textToType.length;
+        }
+
+        function startTimer() {
+            let timeRemaining = timeLimit;
+            timerDisplay.innerText = `${timeRemaining}s`;
+            timer = setInterval(() => {
+                timeRemaining--;
+                timerDisplay.innerText = `${timeRemaining}s`;
+                if (timeRemaining <= 0) {
+                    clearInterval(timer);
+                    inputField.disabled = true;
+                    restartButton.style.display = "block";
+                }
+            }, 1000);
+        }
+
+        function calculateStats() {
+            typedText = inputField.value;
+            correctChars = 0;
+            let highlightedText = "";
+
+            for (let i = 0; i < typedText.length; i++) {
+                if (typedText[i] === textToType[i]) {
+                    highlightedText += textToType[i];
+                    correctChars++;
+                } else {
+                    highlightedText += `<span class='highlight'>${textToType[i] || " "}</span>`;
+                }
+            }
+            highlightedText += textToType.slice(typedText.length);
+            textDisplay.innerHTML = highlightedText;
+
+            const accuracy = ((correctChars / Math.max(typedText.length, 1)) * 100).toFixed(2);
+            const wordsTyped = typedText.trim().split(/\s+/).length;
+            const timeElapsed = timeLimit - parseInt(timerDisplay.innerText);
+            const wpm = Math.round((wordsTyped / Math.max(timeElapsed, 1)) * 60);
+
+            accuracyDisplay.innerText = `${accuracy}%`;
+            wpmDisplay.innerText = wpm >= 0 ? wpm : 0;
+        }
+
+        inputField.addEventListener("input", () => {
+            if (!timerStarted) {
+                startTimer();
+                timerStarted = true;
+            }
+            calculateStats();
+        });
+
+        restartButton.addEventListener("click", () => {
+            clearInterval(timer);
+            generateText();
+            inputField.value = "";
+            inputField.disabled = false;
+            wpmDisplay.innerText = "0";
+            accuracyDisplay.innerText = "100%";
+            timerDisplay.innerText = `${timeLimit}s`;
+            restartButton.style.display = "none";
+            timerStarted = false; // Reset the timer flag
+        });
+
+        // Initialize
+        generateText();
+    </script>
+</body>
+</html>
