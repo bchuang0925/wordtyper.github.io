@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f4f4f4;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 600px;
+        }
+
+        #text-to-type {
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #333;
+            line-height: 1.6;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+        #input-field {
+            width: 100%;
+            height: 100px;
+            font-size: 16px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .correct-char {
+            color: green;
+        }
+
+        .incorrect-char {
+            color: red;
+        }
+
+        .stats {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+        .stats p {
+            margin: 5px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            margin-right: 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        /* Light Theme */
+        .light-theme {
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        .light-theme .container {
+            background-color: white;
+            color: #333;
+        }
+
+        /* Custom Theme */
+        .custom-theme {
+            background-color: #ffe6e6;
+            color: #333;
+        }
+
+        .custom-theme .container {
+            background-color: #ffe6cc;
+            color: #333;
+        }
+
+        /* Font Themes */
+        .default-font {
+            font-family: Arial, sans-serif;
+        }
+
+        .serif-font {
+            font-family: Georgia, serif;
+        }
+
+        .monospace-font {
+            font-family: Courier New, monospace;
+        }
+    </style>
+</head>
+<body class="light-theme default-font">
+    <div class="container">
+        <h1>Typing Test</h1>
+        <div id="text-to-type"></div>
+        <textarea id="input-field" placeholder="Start typing here..."></textarea>
+        <div class="stats">
+            <p>WPM: <span id="wpm">0</span></p>
+            <p>Accuracy: <span id="accuracy">100%</span></p>
+            <p>Time Left: <span id="timer">15s</span></p>
+        </div>
+        <button id="restart-button" style="display:none;">Restart</button>
+        <button id="reset-all-button">Reset All</button>
+
+        <!-- Theme and Font Buttons -->
+        <div>
+            <h3>Color Themes</h3>
+            <button id="light-theme-btn">Light Theme</button>
+            <button id="custom-theme-btn">Custom Theme</button>
+        </div>
+        <div>
+            <h3>Font Themes</h3>
+            <button id="default-font-btn">Default Font</button>
+            <button id="serif-font-btn">Serif Font</button>
+            <button id="monospace-font-btn">Monospace Font</button>
+        </div>
+
+        <!-- Timer Selection -->
+        <div>
+            <h3>Timer Settings</h3>
+            <button id="timer-15s">15 Seconds</button>
+            <button id="timer-30s">30 Seconds</button>
+            <button id="timer-60s">1 Minute</button>
+        </div>
+    </div>
+
+    <script>
+        const sampleWords = [
+            "before", "along", "table", "ready", "green", "shirt", "grasp", "woman", "model", "light",
+            "other", "drive", "music", "coffee", "river", "chair", "earth", "blank", "major", "smooth", "acid", "bark", "bolt", "boot", "bulb", "camp", "cast", "clip", "crack", "dive",
+"dust", "fold", "golf", "grim", "harp", "hint", "lime", "mark", "mask", "mint",
+"apple", "bear", "blame", "blade", "bushy", "chain", "chant", "cheer", "clean", "clown",
+"crowd", "crush", "daily", "dance", "dream", "drink", "dusk", "eagle", "equal", "frog",
+"grant", "green", "house", "item", "joint", "judge", "laugh", "lemon", "light", "merry",
+"model", "night", "piano", "plain", "queen", "reach", "round", "scale", "shirt", "snail",
+"stand", "store", "sweet", "table", "thing", "tune", "urban", "vast", "wordy", "yield",
+"animal", "bacon", "bottle", "bridge", "cabin", "custom", "driver", "fellow", "flight", "gentle",
+"ground", "houses", "image", "lemon", "listen", "metal", "rocket", "salad", "sound", "yellow",
+"abundant", "arrival", "bracket", "capacity", "casual", "critical", "horizon", "lantern", "landscape", "mystery"
+        ];
+
+        let textToType = "";
+        let timeLimit = 15;
+        let timer;
+        let timerStarted = false;
+        let testFinished = false;
+
+        const textDisplay = document.getElementById("text-to-type");
+        const inputField = document.getElementById("input-field");
+        const wpmDisplay = document.getElementById("wpm");
+        const accuracyDisplay = document.getElementById("accuracy");
+        const timerDisplay = document.getElementById("timer");
+        const restartButton = document.getElementById("restart-button");
+
+        function generateText() {
+            textToType = Array.from({ length: 50 }, () => sampleWords[Math.floor(Math.random() * sampleWords.length)]).join(" ");
+            textDisplay.innerHTML = textToType.split("").map(char => `<span>${char}</span>`).join("");
+        }
+
+        function startTimer() {
+            let timeRemaining = timeLimit;
+            timerDisplay.innerText = `${timeRemaining}s`;
+            timer = setInterval(() => {
+                timeRemaining--;
+                timerDisplay.innerText = `${timeRemaining}s`;
+                if (timeRemaining <= 0) {
+                    clearInterval(timer);
+                    inputField.disabled = true;
+                    restartButton.style.display = "block";
+                }
+            }, 1000);
+        }
+
+        function calculateStats() {
+            const typedText = inputField.value;
+            const textSpans = textDisplay.querySelectorAll("span");
+
+            let correctChars = 0;
+            let incorrectChars = 0;
+
+            textSpans.forEach((span, index) => {
+                const char = typedText[index];
+                if (char === undefined) {
+                    span.classList.remove("correct-char", "incorrect-char");
+                } else if (char === span.innerText) {
+                    span.classList.add("correct-char");
+                    span.classList.remove("incorrect-char");
+                    correctChars++;
+                } else {
+                    span.classList.add("incorrect-char");
+                    span.classList.remove("correct-char");
+                    incorrectChars++;
+                }
+            });
+
+            const accuracy = ((correctChars / (correctChars + incorrectChars || 1)) * 100).toFixed(2);
+            const wpm = Math.round((correctChars / 5) / ((timeLimit - parseInt(timerDisplay.innerText, 10)) / 60 || 1));
+
+            accuracyDisplay.innerText = `${accuracy}%`;
+            wpmDisplay.innerText = wpm >= 0 ? wpm : 0;
+
+            if (typedText.length >= textToType.length) {
+                clearInterval(timer);
+                inputField.disabled = true;
+                restartButton.style.display = "block";
+            }
+        }
+
+        inputField.addEventListener("input", () => {
+            if (!timerStarted) {
+                startTimer();
+                timerStarted = true;
+            }
+            calculateStats();
+        });
+
+        restartButton.addEventListener("click", () => {
+            clearInterval(timer);
+            generateText();
+            inputField.value = "";
+            inputField.disabled = false;
+            wpmDisplay.innerText = "0";
+            accuracyDisplay.innerText = "100%";
+            timerDisplay.innerText = `${timeLimit}s`;
+            restartButton.style.display = "none";
+            timerStarted = false;
+        });
+
+        // Timer Settings
+        document.getElementById("timer-15s").addEventListener("click", () => {
+            timeLimit = 15;
+            resetTest();
+        });
+
+        document.getElementById("timer-30s").addEventListener("click", () => {
+            timeLimit = 30;
+            resetTest();
+        });
+
+        document.getElementById("timer-60s").addEventListener("click", () => {
+            timeLimit = 60;
+            resetTest();
+        });
+
+        function resetTest() {
+            clearInterval(timer);
+            generateText();
+            inputField.value = "";
+            inputField.disabled = false;
+            wpmDisplay.innerText = "0";
+            accuracyDisplay.innerText = "100%";
+            timerDisplay.innerText = `${timeLimit}s`;
+            restartButton.style.display = "none";
+            timerStarted = false;
+        }
+
+        // Theme Buttons
+        document.getElementById("light-theme-btn").addEventListener("click", () => {
+            document.body.className = "light-theme";
+        });
+
+        document.getElementById("custom-theme-btn").addEventListener("click", () => {
+            document.body.className = "custom-theme";
+        });
+
+        // Font Buttons
+        document.getElementById("default-font-btn").addEventListener("click", () => {
+            document.body.classList.remove("serif-font", "monospace-font");
+            document.body.classList.add("default-font");
+        });
+
+        document.getElementById("serif-font-btn").addEventListener("click", () => {
+            document.body.classList.remove("default-font", "monospace-font");
+            document.body.classList.add("serif-font");
+        });
+
+        document.getElementById("monospace-font-btn").addEventListener("click", () => {
+            document.body.classList.remove("default-font", "serif-font");
+            document.body.classList.add("monospace-font");
+        });
+
+        // Reset All Button
+        document.getElementById("reset-all-button").addEventListener("click", () => {
+            // Reset everything to initial state
+            timeLimit = 15;
+            document.body.className = "light-theme default-font";
+            resetTest();
+        });
+
+        // Initialize
+        generateText();
+    </script>
+</body>
+</html>
